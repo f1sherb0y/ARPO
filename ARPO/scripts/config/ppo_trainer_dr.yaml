@@ -130,6 +130,7 @@ actor_rollout_ref:
     initial_rollouts: 1  # for experiment
     beam_size: 1. # for experiment
     branch_probability: 0.5 # for experiment
+    entropy_weight: 0.5
     engine_kwargs: # inference engine parameters
       vllm:
         swap_space: null # null means "use the engine default value" (usually 4 GB), setting it to, e.g., 32 means 32 GB
@@ -147,10 +148,6 @@ actor_rollout_ref:
       max_turns: null  # null for no limit (default max_length // 3)
       tool_config_path: null  # null for no tool
       format: chatml  # chatml, more formats will be supported in the future
-    agent:
-      activate_agent: true
-      name: "tool_agent"  # 指定使用 ToolAgent
-      
     tools:
       # rollout通用工具配置
       call_limit: 3  # 每个样本允许的最大工具调用次数
@@ -163,13 +160,13 @@ actor_rollout_ref:
       # 工具实例定义
       tool_instances:
         python:  
-          class_path: verl.workers.agent.tools.python_tool.PythonTool  # 工具类路径
+          class_path: verl.workers.rollout.tools.python_tool.PythonTool  # 工具类路径
           params:  # 工具特定参数
             conda_path: <your_conda_path>
             conda_env: verl
         
         search:
-          class_path: verl.workers.agent.tools.search_tool.BingSearchTool
+          class_path: verl.workers.rollout.tools.search_tool.BingSearchTool
           params:
             api_key: <your_API_key>
             zone: <your_zone>

@@ -107,9 +107,6 @@ fi
 
 
 
-SEARCH_CLASS_PATH="verl.workers.agent.tools.search_tool.BingSearchTool"
-
-
 # ============================ 启动训练 ============================
 python3 -m verl.trainer.main_ppo \
     --config-path=$CONFIG_PATH \
@@ -144,8 +141,7 @@ python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.rollout.beam_size=${BEAM_SIZE} \
     actor_rollout_ref.rollout.branch_probability=${BRANCH_PROBABILITY} \
     actor_rollout_ref.rollout.entropy_weight=${Entropy_weight} \
-    +actor_rollout_ref.rollout.tools.tool_instances.search.params.cache_file=${SEARCH_CACHE_PATH} \
-    +actor_rollout_ref.rollout.tools.tool_instances.search.class_path=${SEARCH_CLASS_PATH} \
+    ++actor_rollout_ref.rollout.tools.tool_instances.search.params.cache_file=${SEARCH_CACHE_PATH} \
     actor_rollout_ref.rollout.multi_turn.enable=${ENABLE_MULTI_TURN} \
     actor_rollout_ref.ref.log_prob_max_token_len_per_gpu=$((4*(MAX_PROMPT_LENGTH+MAX_RESPONSE_LENGTH))) \
     actor_rollout_ref.ref.fsdp_config.param_offload=True \
