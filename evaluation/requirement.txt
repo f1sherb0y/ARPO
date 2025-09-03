@@ -115,7 +115,6 @@ langid==1.1.6
 lark==1.2.2
 lazy_loader==0.4
 librosa==0.11.0
-llamafactory==0.9.3.dev0
 llguidance==0.7.19
 llvmlite==0.44.0
 lm-format-enforcer==0.10.11
