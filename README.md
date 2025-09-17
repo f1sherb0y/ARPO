@@ -105,7 +105,8 @@ conda create -n sft python=3.10
 conda activate sft
 
 # Install dependencies
-pip install -r requirements.txt
+pip install torch==3.8.0 ninja
+pip install flash_attn==2.8.2 --no-build-isolation
 ```
 
 ### 2. Fine-Tuning Model

@@ -196,7 +196,7 @@ class ToolAgent(BaseAgent):
         current_sampling_params.max_tokens = max_tokens
 
         active_prompts = [self.curr_inputs[i] for i in self.active_indices]
-        outputs = self.vllm_engine.generate(prompts={"prompt_token_ids": active_prompts}, sampling_params=current_sampling_params, use_tqdm=False)
+        outputs = self.vllm_engine.generate(prompts=[{"prompt_token_ids": prompt} for prompt in active_prompts], sampling_params=current_sampling_params, use_tqdm=False)
 
         # --- 2. Process outputs and prepare tool calls ---
         tool_requests = {tag: [] for tag in self.tool_executor.tools}

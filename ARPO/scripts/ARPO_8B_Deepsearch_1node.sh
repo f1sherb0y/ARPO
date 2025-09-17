@@ -5,9 +5,9 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 PARENT_DIR="$(dirname "$SCRIPT_DIR")"
 cd "$PARENT_DIR"
 echo "已切换到上一级目录: $PARENT_DIR"
-ARPO_PATH=
-MODEL_PATH=
-CHECKPOINT_PATH=
+ARPO_PATH=/home/choet/socialsim/data/ARPO/ARPO
+MODEL_PATH=/home/choet/models/Qwen3-8B
+CHECKPOINT_PATH=/home/choet/socialsim/data/ARPO/checkpoints
 
 # ============================ 环境设置 ============================
 # 设置基础环境变量
@@ -153,7 +153,7 @@ python3 -m verl.trainer.main_ppo \
     custom_reward_function.path=${CUSTOM_REWARD_FUNCTION_PATH} \
     custom_reward_function.name=${CUSTOM_REWARD_FUNCTION_NAME} \
     trainer.critic_warmup=0 \
-    trainer.logger="[console, wandb]" \
+    trainer.logger="[console]" \
     trainer.project_name=${PROJECT_NAME} \
     trainer.experiment_name=${EXPERIMENT_NAME} \
     trainer.n_gpus_per_node=${N_GPUS_PER_NODE} \

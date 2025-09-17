@@ -256,7 +256,7 @@ class vLLMRolloutWithTools(vLLMRollout):
 
                 # Update max_tokens for each active sample
                 with self.update_sampling_params(n=1, stop=self.stop_sequences, max_tokens=max(1, max((max_len - (len(curr_inputs[i]) - len(init_inputs[i])) for i in active_indices))), detokenize=True, logprobs=self.logprobs):
-                    outputs = self.inference_engine.generate(prompts={"prompt_token_ids": active_prompts}, sampling_params=self.sampling_params, use_tqdm=False)
+                    outputs = self.inference_engine.generate(prompts=[{"prompt_token_ids": prompt} for prompt in active_prompts], sampling_params=self.sampling_params, use_tqdm=False)
                 # ========== Entropy Variation Monitoring ==========
                 vocab_size = len(self.tokenizer.get_vocab())
                 entropy_norm_factor = math.log(vocab_size)
