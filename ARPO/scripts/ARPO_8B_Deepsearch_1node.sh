@@ -26,7 +26,7 @@ export https_proxy=http://oversea-squid2.ko.txyun:11080
 export no_proxy=localhost,127.0.0.1,localaddress,localdomain.com,internal,corp.kuaishou.com,test.gifshow.com,staging.kuaishou.com
 
 # 设置Python路径
-export PYTHONPATH=/mmu_nlp_ssd/dongguanting/ARPO/verl_arpo_entropy:$PYTHONPATH
+export PYTHONPATH=${ARPO_PATH}/verl_arpo_entropy:$PYTHONPATH
 
 # ============================ 基础配置 ============================
 # 实验名称与项目
@@ -66,6 +66,7 @@ INITIAL_ROLLOUTS=8                 # 初始rollout数量
 BEAM_SIZE=2                        # beam size
 BRANCH_PROBABILITY=0.5             # branch probability
 Entropy_weight=0.2
+ENABLE_MULTI_TURN=False
 # ============================ Rollout Tools配置 ==========================
 SEARCH_CACHE_PATH="${ARPO_PATH}/search_cache/search_cache.json" # Modify
 
