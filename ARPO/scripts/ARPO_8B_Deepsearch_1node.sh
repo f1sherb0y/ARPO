@@ -5,7 +5,9 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 PARENT_DIR="$(dirname "$SCRIPT_DIR")"
 cd "$PARENT_DIR"
 echo "已切换到上一级目录: $PARENT_DIR"
-
+ARPO_PATH=
+MODEL_PATH=
+CHECKPOINT_PATH=
 
 # ============================ 环境设置 ============================
 # 设置基础环境变量
@@ -32,7 +34,7 @@ PROJECT_NAME="deep_research"
 EXPERIMENT_NAME="qwen3_sft5.4w_global_16_init_8_beam_2_random_0.5_SDS_8B"
 
 # 配置文件路径
-CONFIG_PATH="<your_path_to_ARPO>/scripts/config" #config文件夹的绝对路径修改,相对路径不太可以
+CONFIG_PATH="${ARPO_PATH}/scripts/config" #config文件夹的绝对路径修改,相对路径不太可以
 CONFIG_NAME="ppo_trainer_dr.yaml"
 # /mmu_nlp_ssd/makai05/DeepResearch/train_rl/config/ppo_trainer_dr.yaml
 # 分布式训练设置
@@ -48,12 +50,12 @@ MAX_PROMPT_LENGTH=2000             # 最大提示长度
 MAX_RESPONSE_LENGTH=10000            # 最大响应长度
 
 # 数据文件路径
-TRAIN_FILES="<your_path_to_ARPO>/rl_datasets/hard_search_1k.parquet"
-VALID_FILES=["<your_path_to_ARPO>/rl_datasets/gaia_test.parquet","<your_path_to_ARPO>/rl_datasets/hle_test.parquet"]
+TRAIN_FILES="${ARPO_PATH}/rl_datasets/hard_search_1k.parquet"
+VALID_FILES=["${ARPO_PATH}/rl_datasets/gaia_test.parquet","${ARPO_PATH}/rl_datasets/hle_test.parquet"]
 
 # ============================ 模型配置 ============================
 # Actor模型路径
-ACTOR_MODEL_PATH="<your_8B_model_path>"
+ACTOR_MODEL_PATH="${MODEL_PATH}"
 
 # ============================ Rollout配置 ==========================
 # Rollout设置
@@ -65,12 +67,12 @@ BEAM_SIZE=2                        # beam size
 BRANCH_PROBABILITY=0.5             # branch probability
 Entropy_weight=0.2
 # ============================ Rollout Tools配置 ==========================
-SEARCH_CACHE_PATH="<your_path_to_ARPO>/search_cache/search_cache.json" # Modify
+SEARCH_CACHE_PATH="${ARPO_PATH}/search_cache/search_cache.json" # Modify
 
 # ============================ 奖励模型配置 ==========================
 # 奖励模型设置
 REWARD_MANAGER="naive"              # 奖励管理器类型
-CUSTOM_REWARD_FUNCTION_PATH="<your_path_to_ARPO>/verl_arpo_entropy/verl/utils/reward_score/deep_research.py"
+CUSTOM_REWARD_FUNCTION_PATH="${ARPO_PATH}/verl_arpo_entropy/verl/utils/reward_score/deep_research.py"
 CUSTOM_REWARD_FUNCTION_NAME="compute_score"
 
 # ============================ 训练配置 ============================
@@ -81,12 +83,12 @@ TEST_FREQ=5                        # 测试频率
 
 # ============================ 路径配置 ============================
 # 保存路径
-SAVE_PATH="<your_checkpoint_save_dir>/rl/${EXPERIMENT_NAME}"
+SAVE_PATH="${CHECKPOINT_PATH}/rl/${EXPERIMENT_NAME}"
 ROLLOUT_SAVE_PATH="${SAVE_PATH}/rollout"
 
 # ============================ WandB配置 ============================
 # WandB设置
-WANDB_API_KEY="<your_wandb_key>" # Modify your wandb key
+WANDB_API_KEY="" # Modify your wandb key
 
 # ============================ 准备工作 ============================
 # 登录WandB（如果提供了API密钥）
@@ -136,6 +138,7 @@ python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.rollout.name=${ROLLOUT_NAME} \
     actor_rollout_ref.rollout.mode=${ROLLOUT_MODE} \
     actor_rollout_ref.rollout.gpu_memory_utilization=0.6 \
+    +actor_rollout_ref.rollout.limit_mm_per_prompt={} \
     actor_rollout_ref.rollout.n=${ROLLOUT_N} \
     actor_rollout_ref.rollout.initial_rollouts=${INITIAL_ROLLOUTS} \
     actor_rollout_ref.rollout.beam_size=${BEAM_SIZE} \

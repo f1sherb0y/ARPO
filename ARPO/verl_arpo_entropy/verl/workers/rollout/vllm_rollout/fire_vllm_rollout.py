@@ -143,9 +143,8 @@ class FIREvLLMRollout(vLLMRollout):
             # users can customize different sampling_params at different run
             with self.update_sampling_params(**kwargs):
                 output = self.inference_engine.generate(
-                    prompts=None,  # because we have already convert it to prompt token id
+                    prompts={"prompt_token_ids": idx_list},  # because we have already convert it to prompt token id
                     sampling_params=self.sampling_params,
-                    prompt_token_ids=idx_list,
                     use_tqdm=False,
                 )
 
@@ -153,18 +152,16 @@ class FIREvLLMRollout(vLLMRollout):
         else:
             with self.update_sampling_params(**kwargs):
                 output_0 = self.inference_engine.generate(
-                    prompts=None,  # because we have already convert it to prompt token id
+                    prompts={"prompt_token_ids": idx_list},  # because we have already convert it to prompt token id
                     sampling_params=self.sampling_params_0,
-                    prompt_token_ids=idx_list,
                     use_tqdm=False,
                 )
                 new_idx_list = []
                 for i in range(batch_size):
                     new_idx_list.append(idx_list[i] + output_0[0][i].tolist())
                 output = self.inference_engine.generate(
-                    prompts=None,  # because we have already convert it to prompt token id
+                    prompts={"prompt_token_ids": new_idx_list},  # because we have already convert it to prompt token id
                     sampling_params=self.sampling_params,
-                    prompt_token_ids=new_idx_list,
                     use_tqdm=False,
                 )
 

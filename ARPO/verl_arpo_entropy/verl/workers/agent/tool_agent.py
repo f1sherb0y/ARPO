@@ -1,10 +1,10 @@
 import concurrent.futures
 import logging
 import os
+import random
 from collections import Counter
 from copy import deepcopy
-from typing import List, Dict, Any, Tuple
-import random
+from typing import Any, Dict, List, Tuple
 
 import torch
 import torch.distributed as dist
@@ -69,8 +69,7 @@ class AgentMetrics:
 
     def finalize(self) -> Dict[str, Any]:
         if self.metrics["tools/total_calls"] > 0:
-            self.metrics["tools/avg_execution_time"] = \
-                self.metrics["tools/total_execution_time"] / self.metrics["tools/total_calls"]
+            self.metrics["tools/avg_execution_time"] = self.metrics["tools/total_execution_time"] / self.metrics["tools/total_calls"]
 
         for tag in self.tool_tags:
             calls = self.calls_per_tool[tag]
@@ -140,16 +139,13 @@ class ToolAgent(BaseAgent):
         self.branch_probability = self.config.get("branch_probability", 0.5)
         self.initial_rollouts = min(self.initial_rollouts, num_samples)
 
-        input_ids = prompts.batch['input_ids']
+        input_ids = prompts.batch["input_ids"]
         self.original_batch_size = input_ids.size(0)
         self.device = input_ids.device
 
-        if 'raw_prompt_ids' not in prompts.non_tensor_batch:
-            raise ValueError(
-                "`raw_prompt_ids` not found in `prompts.non_tensor_batch`. "
-                "It should be pre-processed and added by the calling rollout worker."
-            )
-        raw_prompt_ids = prompts.non_tensor_batch.pop('raw_prompt_ids')
+        if "raw_prompt_ids" not in prompts.non_tensor_batch:
+            raise ValueError("`raw_prompt_ids` not found in `prompts.non_tensor_batch`. It should be pre-processed and added by the calling rollout worker.")
+        raw_prompt_ids = prompts.non_tensor_batch.pop("raw_prompt_ids")
 
         self.curr_inputs = []
         self.init_inputs = []
@@ -171,11 +167,7 @@ class ToolAgent(BaseAgent):
 
         # Tracking for beam search
         self.rollouts_per_sample = [self.initial_rollouts] * self.original_batch_size
-        self.sample_to_indices = {
-            i: list(range(i * self.initial_rollouts, (i + 1) * self.initial_rollouts))
-            for i in range(self.original_batch_size)
-        }
-
+        self.sample_to_indices = {i: list(range(i * self.initial_rollouts, (i + 1) * self.initial_rollouts)) for i in range(self.original_batch_size)}
 
     @torch.no_grad()
     def step(self) -> torch.Tensor:
@@ -189,7 +181,7 @@ class ToolAgent(BaseAgent):
         current_sampling_params = deepcopy(self.sampling_params)
         current_sampling_params.n = 1
         current_sampling_params.detokenize = True
-        
+
         # Combine original and tool stop sequences
         original_stop = current_sampling_params.stop
         tool_stop = self.tool_executor.stop_sequences
@@ -204,11 +196,7 @@ class ToolAgent(BaseAgent):
         current_sampling_params.max_tokens = max_tokens
 
         active_prompts = [self.curr_inputs[i] for i in self.active_indices]
-        outputs = self.vllm_engine.generate(
-            prompt_token_ids=active_prompts,
-            sampling_params=current_sampling_params,
-            use_tqdm=False
-        )
+        outputs = self.vllm_engine.generate(prompts={"prompt_token_ids": active_prompts}, sampling_params=current_sampling_params, use_tqdm=False)
 
         # --- 2. Process outputs and prepare tool calls ---
         tool_requests = {tag: [] for tag in self.tool_executor.tools}
@@ -220,7 +208,7 @@ class ToolAgent(BaseAgent):
             self.curr_inputs[out_idx].extend(generated_tokens)
             self.result_masks[out_idx].extend([1] * len(generated_tokens))
 
-            is_tool_call = output.finish_reason == 'stop' and output.stop_reason in self.tool_executor.stop_sequences
+            is_tool_call = output.finish_reason == "stop" and output.stop_reason in self.tool_executor.stop_sequences
 
             if is_tool_call:
                 if self.call_counters[out_idx] < self.tool_call_limit:
@@ -234,7 +222,7 @@ class ToolAgent(BaseAgent):
                     self.call_counters[out_idx] += 1
                 else:
                     self.metrics_tracker.update_on_limit_reached()
-            elif output.finish_reason == 'length':
+            elif output.finish_reason == "length":
                 # If stopped due to length, but still within max_len, continue.
                 response_len = len(self.curr_inputs[out_idx]) - self.prompts_len[out_idx]
                 if response_len < self.max_len:
@@ -252,11 +240,7 @@ class ToolAgent(BaseAgent):
                         self.metrics_tracker.update_on_tool_request(tag)
 
                 with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_tool_workers) as executor:
-                    futures = {
-                        executor.submit(self.tool_executor.execute_with_retry, self.tool_executor.get_tool(tag), req["content"]):
-                            {"index": req["index"], "tag": tag}
-                        for tag, requests in tool_requests.items() for req in requests
-                    }
+                    futures = {executor.submit(self.tool_executor.execute_with_retry, self.tool_executor.get_tool(tag), req["content"]): {"index": req["index"], "tag": tag} for tag, requests in tool_requests.items() for req in requests}
                     for future in concurrent.futures.as_completed(futures):
                         info = futures[future]
                         idx, tag = info["index"], info["tag"]
@@ -272,7 +256,7 @@ class ToolAgent(BaseAgent):
                         formatted_result = f" <result>\n{result_text}\n</result>"
                         result_tokens = self.tokenizer.encode(formatted_result, add_special_tokens=False)
                         tool_results_for_broadcast.append({"idx": idx, "tokens": result_tokens})
-            broadcast_data['tool_results'] = tool_results_for_broadcast
+            broadcast_data["tool_results"] = tool_results_for_broadcast
 
         # Broadcast results from rank 0 to all other ranks
         broadcast_list = [broadcast_data]
@@ -280,10 +264,10 @@ class ToolAgent(BaseAgent):
         broadcast_data = broadcast_list[0]
 
         # All ranks apply the results to maintain consistent state
-        tool_execution_results = broadcast_data.get('tool_results', [])
+        tool_execution_results = broadcast_data.get("tool_results", [])
         for res in tool_execution_results:
-            idx = res['idx']
-            result_tokens = res['tokens']
+            idx = res["idx"]
+            result_tokens = res["tokens"]
             self.curr_inputs[idx].extend(result_tokens)
             self.result_masks[idx].extend([0] * len(result_tokens))
 
@@ -325,7 +309,7 @@ class ToolAgent(BaseAgent):
             remaining_slots = num_samples - self.rollouts_per_sample[orig_sample]
             if remaining_slots <= 0:
                 continue
-            
+
             print(f"  Branching for active sample {orig_sample}: active_idxs={active_idxs}, remaining_slots={remaining_slots}")
             branches_created = 0
             for source_idx in active_idxs:
@@ -344,12 +328,13 @@ class ToolAgent(BaseAgent):
                     self.rollouts_per_sample[orig_sample] += 1
                     branches_created += 1
 
-        # Add non-active samples that still need more rollouts 
+        # Add non-active samples that still need more rollouts
         for orig_sample in range(self.original_batch_size):
             if orig_sample not in active_by_sample and self.rollouts_per_sample[orig_sample] < num_samples:
                 branches_to_add = min(1, num_samples - self.rollouts_per_sample[orig_sample])
-                if branches_to_add <= 0: continue
-                
+                if branches_to_add <= 0:
+                    continue
+
                 print(f"  Restarting for finished sample {orig_sample}: need to add {branches_to_add} new rollouts.")
                 source_idx = self.sample_to_indices[orig_sample][0]
                 for _ in range(branches_to_add):
@@ -399,13 +384,13 @@ class ToolAgent(BaseAgent):
             assert len(selected_indices) == num_samples, f"len(selected_indices): {len(selected_indices)} != num_samples: {num_samples}"
 
             for idx in selected_indices:
-                response_tokens = self.curr_inputs[idx][self.prompts_len[idx]:]
+                response_tokens = self.curr_inputs[idx][self.prompts_len[idx] :]
                 response_mask = self.result_masks[idx]
 
                 # Truncate if over max length and replace the last token with EOS
                 if len(response_tokens) > self.max_len:
-                    response_tokens = response_tokens[:self.max_len]
-                    response_mask = response_mask[:self.max_len]
+                    response_tokens = response_tokens[: self.max_len]
+                    response_mask = response_mask[: self.max_len]
                     if len(response_tokens) > 0:
                         response_tokens[-1] = self.eos_token_id
                         response_mask[-1] = 1  # Ensure mask is 1 for the EOS token
@@ -419,8 +404,4 @@ class ToolAgent(BaseAgent):
         print(f"padded_responses(shape: {padded_responses.shape}): {padded_responses}")
         print(f"padded_masks(shape: {padded_masks.shape}): {padded_masks}")
 
-        return {
-            "responses": padded_responses,
-            "loss_mask": padded_masks,
-            "meta_info": {"metrics": self.metrics_tracker.finalize()}
-        }
+        return {"responses": padded_responses, "loss_mask": padded_masks, "meta_info": {"metrics": self.metrics_tracker.finalize()}}

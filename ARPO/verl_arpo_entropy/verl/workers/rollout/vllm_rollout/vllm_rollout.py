@@ -117,7 +117,7 @@ class vLLMRollout(BaseRollout):
         #    (which can vary across different vLLM versions);
         # - Otherwise it's the desired value we want to explicitly set.
         engine_kwargs = {key: val for key, val in engine_kwargs.items() if val is not None}
-        lora_kwargs = kwargs.pop('lora_kwargs', {})
+        lora_kwargs = kwargs.pop("lora_kwargs", {})
         self.lora_kwargs = lora_kwargs
         self.inference_engine = LLM(
             actor_module,
@@ -226,14 +226,13 @@ class vLLMRollout(BaseRollout):
             # self.inference_engine.llm_engine.list_loras
             lora_int_ids = list(self.inference_engine.llm_engine.list_loras())
             if len(lora_int_ids) > 0:
-                lora_int_id=lora_int_ids[0]
-                lora_requests = [LoRARequest(lora_name=f"{lora_int_id}",lora_int_id=lora_int_id,lora_path="/simon-stub-path")] * batch_size
+                lora_int_id = lora_int_ids[0]
+                lora_requests = [LoRARequest(lora_name=f"{lora_int_id}", lora_int_id=lora_int_id, lora_path="/simon-stub-path")] * batch_size
         # users can customize different sampling_params at different run
         with self.update_sampling_params(**kwargs):
             output = self.inference_engine.generate(
-                prompts=None,  # because we have already convert it to prompt token id
+                prompts={"prompt_token_ids": idx_list},
                 sampling_params=self.sampling_params,
-                prompt_token_ids=idx_list,
                 lora_request=lora_requests,
                 use_tqdm=False,
             )
@@ -274,7 +273,7 @@ class vLLMRollout(BaseRollout):
                 "prompts": idx,
                 "responses": response,
                 "input_ids": seq,  # here input_ids become the whole sentences
-                'rollout_log_probs': log_probs, # we will recompute old log prob with actor
+                "rollout_log_probs": log_probs,  # we will recompute old log prob with actor
                 "attention_mask": attention_mask,
                 "position_ids": position_ids,
             },
